@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<launch>
+  	<arg name="joint_states_topic" default="dinova/omni_states_vicon"/>
+  	<arg name="with_obstacles" default="false" />
+	<arg name="lidar" default="false"  />
+
+	<!-- Robot model -->
+	<group ns="$(env ROBOT_NAME)">
+		<param name="with_obstacles" type="bool" value="$(arg with_obstacles)"/>
+		<group if="$(arg lidar)">
+			<rosparam file="$(find dinova_fabrics_wrapper)/config/dinova_lidar.yaml"/>
+		</group>
+        <group unless="$(arg lidar)">
+			<rosparam file="$(find dinova_fabrics_wrapper)/config/dinova.yaml"/>
+		</group>
+		<node pkg="switched_control" type="dinova_switched_action_server.py" name="switched_action_server" output="screen">
+			<remap from="joints_velocity_controller/command" to="kinova/command" />
+    		<remap from="joint_states" to="$(arg joint_states_topic)" />
+		</node>
+	</group>
+</launch>
