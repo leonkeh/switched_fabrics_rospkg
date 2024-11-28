@@ -8,13 +8,12 @@ import rospy
 from dinova_fabrics_wrapper.dinova_pose import DinovaFabricsPose
 from dinova_fabrics_msgs.msg import FabricsPoseGoal
 
-class FabricsDinovaActionServer(FabricsActionServer):
-
+class SwitchedFabricsDinovaActionServer(FabricsActionServer):
     def init_specifics(self) -> None:
         self.goal_threshold = rospy.get_param('pose_threshold')
         self._feedback = dinova_fabrics_msgs.msg.FabricsPoseFeedback()
         self._result = dinova_fabrics_msgs.msg.FabricsPoseResult()
-        self.node = DinovaFabricsPose()
+        self.nodes = [DinovaFabricsPose(), DinovaFabricsPose()]  # list of fabric controllers
         self._action_name = rospy.get_name()
         self._as = actionlib.SimpleActionServer(
             self._action_name,
@@ -24,7 +23,16 @@ class FabricsDinovaActionServer(FabricsActionServer):
         )
         self._as.start()
 
+        # switching stuff
+        self.switch_memory = 0
+
+    def switching_function(self):
+        n_controllers = len(self.nodes)  # number of controllers that we can switch in between
+        selected_controller = self.switch_memory if self.switch_memory < n_controllers - 1 else 0
+        return selected_controller
+
     def execute_cb(self, goal: FabricsPoseGoal):
+        self.node = self.nodes[self.switching_function()]
         self.node._goal_cb(goal.goal_pose)
         self.goal_threshold = self.node._goal_threshold_cb(goal.goal_threshold)
         self.execute()
