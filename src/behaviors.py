@@ -7,9 +7,9 @@ class Behavior(DinovaFabricsPose):
     def __init__(self, behavior_type: str, obstacles: bool):
         super().__init__()
         if behavior_type == "aggressive":
-            self.goal_weight = 20.
+            self.goal_weight = 100.
         elif behavior_type == "precise":
-            self.goal_weight = 20.
+            self.goal_weight = 2.
         else:
             raise ValueError("specified behavior type is not known")
         

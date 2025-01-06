@@ -1,7 +1,6 @@
 import numpy as np
 
-def time_switching_function(self, behaviors, params):
-    n_behaviors = len(behaviors)  # number of behaviors that we can switch in between
-    switch_memory = params['switch_memory']
-    selected_behavior = switch_memory if switch_memory < n_behaviors - 1 else 0
+def time_switching_function(behaviors, params):
+    switch_counter = params['switch_counter']
+    selected_behavior = behaviors[(switch_counter // 5) % 2]
     return selected_behavior
