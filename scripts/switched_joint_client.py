@@ -1,9 +1,8 @@
 #! /usr/bin/env python3
 
 import rospy
-# from __future__ import print_function
+import subprocess
 import sys
-# Brings in the SimpleActionClient
 import actionlib
 
 # Brings in the messages used by the fibonacci action, including the
@@ -48,18 +47,39 @@ def fabrics_client(schedule):
             print("status:", status)
 
     elif schedule == "experiment":
+        # run an experiment and record the data in a rosbag
         goals = [[1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [3.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
-        for config_goal in goals:
-            rospy.set_param('joint_goal', config_goal)
-            goal = default_goal(goal=goal)
-            client.send_goal(goal)
-            max_time = 30.
-            status = client.wait_for_result(timeout=rospy.Duration(max_time))
-            if status == False:
-                client.cancel_goal()
-                print("ended after timeout")
-            else:
-                print("status:", status)
+        topics_to_record = ["/dinova/omni_states"]
+        rosbag_file_name = "experiment_data.bag"
+
+        try:
+            # Start recording a rosbag
+            print("Starting rosbag recording...")
+            rosbag_process = subprocess.Popen(
+                ["rosbag", "record", "-O", rosbag_file_name] + topics_to_record,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            for config_goal in goals:
+                rospy.set_param('joint_goal', config_goal)
+                goal = default_goal(goal=goal)
+                client.send_goal(goal)
+                max_time = 30.
+                status = client.wait_for_result(timeout=rospy.Duration(max_time))
+                if status == False:
+                    client.cancel_goal()
+                    print("ended after timeout")
+                else:
+                    print("status:", status)
+        except KeyboardInterrupt:
+            print("Experiment interrupted.")
+        finally:
+            # Stop recording the rosbag
+            print("Stopping rosbag recording...")
+            rosbag_process.terminate()
+            rosbag_process.wait()
+            print("Rosbag recording stopped.")
+
         
     # Prints out the result of executing the action
     return client.get_result()
