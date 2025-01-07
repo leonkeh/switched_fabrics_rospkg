@@ -8,9 +8,8 @@ import rospy
 from dinova_fabrics_wrapper.dinova_pose import DinovaFabricsPose
 from dinova_fabrics_msgs.msg import FabricsPoseGoal
 
-from switching_functions import time_switching_function
 from behaviors import Behavior
-import rosnode
+import switching_functions as sfs
 
 class SwitchedFabricsDinovaActionServer(FabricsActionServer):
     def init_specifics(self) -> None:
@@ -28,9 +27,9 @@ class SwitchedFabricsDinovaActionServer(FabricsActionServer):
         self._as.start()
 
         # switching stuff
-        self.switching_function = time_switching_function
+        self.switching_function = sfs.time_switching_function #sfs.time_switching_function
         self.switch_counter = 0
-        self.node = None  # will be defined dynamically in run_fabrics
+        self.node = self.nodes[0]  # will be defined dynamically in run_fabrics
 
     def run_fabrics(self) -> None:
         """this overwrites the parent's run_fabrics to accomendate multi-fabrics use"""
@@ -46,7 +45,7 @@ class SwitchedFabricsDinovaActionServer(FabricsActionServer):
     def execute_cb(self, goal: FabricsPoseGoal):
         for node in self.nodes:
             node._goal_cb(goal.goal_pose)
-        self.goal_threshold = self.node._goal_threshold_cb(goal.goal_threshold)  # TODO: this should instead be defined in the constructer and be written to the node (this only overwrites what is done in the constructor)
+        self.goal_threshold = 0.1 #self.node._goal_threshold_cb(goal.goal_threshold)  # TODO: this should instead be defined in the constructer and be written to the node (this only overwrites what is done in the constructor)
         self.execute()  # this will run a while loop (until preempted) that continuously calls run_fabrics()
         
 if __name__ == '__main__':

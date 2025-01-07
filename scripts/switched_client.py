@@ -14,7 +14,7 @@ from std_msgs.msg import Float32
 
 def default_goal(goal):
     #default goal pose:
-    goal_position = [-1, 0.3, 0.9]
+    goal_position = [3., 0., 1.]
     goal_orientation = [0.0, 0.0, 0.0, 1.0]
     goal.goal_pose.position.x = goal_position[0]
     goal.goal_pose.position.y = goal_position[1]
@@ -24,7 +24,7 @@ def default_goal(goal):
     goal.goal_pose.orientation.z = goal_orientation[2]
     goal.goal_pose.orientation.w = goal_orientation[3]
     
-    goal.goal_threshold = 0.20
+    goal.goal_threshold = 0.01
     return goal
 
 def fabrics_client():
@@ -34,7 +34,7 @@ def fabrics_client():
         print("please specify robot name as an argument, e.g.: dingo1, dingo2")
         return
     # Creates the SimpleActionClient, passing the type of the action
-    client = actionlib.SimpleActionClient(robot_name+'/pose_action_server', dinova_fabrics_msgs.msg.FabricsPoseAction)
+    client = actionlib.SimpleActionClient(robot_name+'/switched_action_server', dinova_fabrics_msgs.msg.FabricsPoseAction)
     # Waits until the action server has started up and started
     # listening for goals.
     client.wait_for_server()
