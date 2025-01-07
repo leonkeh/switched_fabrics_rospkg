@@ -1,9 +1,9 @@
-from dinova_fabrics_wrapper.dinova_pose import DinovaFabricsPose
 from dinova_fabrics_wrapper.utils.utils_dinova import compose_pose_goal
+from dinova_fabrics_wrapper.dinova_joint_space import DinovaFabricsJointSpace
 from geometry_msgs.msg import Pose
 
 
-class Behavior(DinovaFabricsPose):
+class Behavior(DinovaFabricsJointSpace):
     def __init__(self, behavior_type: str, obstacles: bool):
         super().__init__()
         if behavior_type == "aggressive":
