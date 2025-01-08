@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <launch>
-  	<arg name="joint_states_topic" default="/dinova/omni_states_vicon"/>
+  	<!-- <arg name="joint_states_topic" default="dinova/omni_states_vicon"/> -->
+	<arg name="joint_states_topic" default="/dinova/omni_states_vicon"/>
   	<arg name="with_obstacles" default="false" />
 	<arg name="lidar" default="false"  />
 

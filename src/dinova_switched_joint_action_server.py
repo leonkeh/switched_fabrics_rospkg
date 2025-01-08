@@ -4,8 +4,6 @@ import actionlib
 import dinova_fabrics_msgs.msg
 
 from dinova_fabrics_wrapper.common_action_server import FabricsActionServer
-import rospy
-from dinova_fabrics_wrapper.dinova_joint_space import DinovaFabricsJointSpace
 from dinova_fabrics_msgs.msg import FabricsJointGoal
 
 from behaviors import Behavior

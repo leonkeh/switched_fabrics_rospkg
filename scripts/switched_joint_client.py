@@ -32,6 +32,7 @@ def fabrics_client(schedule):
     goal = dinova_fabrics_msgs.msg.FabricsJointGoal(goal_joints=Float64MultiArray(), goal_threshold=Float32())
     
     if schedule == "single_goal":
+        rospy.set_param('joint_goal', [3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]) # home
         goal = default_goal(goal=goal)
 
         # Sends the goal to the action server.
@@ -48,18 +49,20 @@ def fabrics_client(schedule):
 
     elif schedule == "experiment":
         # run an experiment and record the data in a rosbag
-        goals = [[1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [3.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
-        topics_to_record = ["/dinova/omni_states"]
-        rosbag_file_name = "experiment_data.bag"
+        goals = [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [2.0, 2.0, 0.0, 0.0, -1.5, 0.15, 0.0, 1.0, 0.0]]
+        make_rosbag = False
+        topics_to_record = ["/dingo1/dinova/omni_states_vicon"] # for sim /dinova/omni_states
+        rosbag_file_name = "experiment_data_real_world.bag"
 
         try:
-            # Start recording a rosbag
-            print("Starting rosbag recording...")
-            rosbag_process = subprocess.Popen(
-                ["rosbag", "record", "-O", rosbag_file_name] + topics_to_record,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-            )
+            if make_rosbag:
+                # Start recording a rosbag
+                print("Starting rosbag recording...")
+                rosbag_process = subprocess.Popen(
+                    ["rosbag", "record", "-O", rosbag_file_name] + topics_to_record,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
             for config_goal in goals:
                 rospy.set_param('joint_goal', config_goal)
                 goal = default_goal(goal=goal)
@@ -74,11 +77,12 @@ def fabrics_client(schedule):
         except KeyboardInterrupt:
             print("Experiment interrupted.")
         finally:
-            # Stop recording the rosbag
-            print("Stopping rosbag recording...")
-            rosbag_process.terminate()
-            rosbag_process.wait()
-            print("Rosbag recording stopped.")
+            if make_rosbag:
+                # Stop recording the rosbag
+                print("Stopping rosbag recording...")
+                rosbag_process.terminate()
+                rosbag_process.wait()
+                print("Rosbag recording stopped.")
 
         
     # Prints out the result of executing the action

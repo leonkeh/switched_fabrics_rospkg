@@ -1,0 +1,7 @@
+behaviors:
+  aggressive:
+    weight: 20.0
+    obstacle_avoidance: true
+  precise:
+    weight: 3.0
+    obstacle_avoidance: true
