@@ -3,14 +3,13 @@ import rospy
 
 def no_switching_function(behaviors, params):
     selected_behavior = behaviors[0]
-    return selected_behavior
+    return None, selected_behavior
 
 def time_switching_function(behaviors, params):
-    #switch_counter = params['switch_counter']
     current_time = rospy.Time.now().to_sec()
     selected_index = 0
     if current_time % 1. <= 0.5:
         selected_index = 0
     else:
         selected_index = 1
-    return behaviors[selected_index]
+    return selected_index, behaviors[selected_index]

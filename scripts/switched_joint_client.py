@@ -51,8 +51,8 @@ def fabrics_client(schedule):
         # run an experiment and record the data in a rosbag
         goals = [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [2.0, 2.0, 0.0, 0.0, -1.5, 0.15, 0.0, 1.0, 0.0]]
         make_rosbag = False
-        topics_to_record = ["/dingo1/dinova/omni_states_vicon"] # for sim /dinova/omni_states
-        rosbag_file_name = "experiment_data_real_world.bag"
+        topics_to_record = ["/dinova/omni_states", "/dinova/switched_action_server/switching_signal"] # for sim /dinova/omni_states for real "/dingo1/dinova/omni_states_vicon"
+        rosbag_file_name = "experiment_data.bag"
 
         try:
             if make_rosbag:
