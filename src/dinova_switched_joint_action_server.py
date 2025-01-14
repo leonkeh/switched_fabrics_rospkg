@@ -29,6 +29,13 @@ class SwitchedFabricsDinovaActionServer(FabricsActionServer):
         self.switching_function = sfs.time_switching_function #sfs.time_switching_function
         self.node = self.nodes[0]  # will be defined dynamically in run_fabrics
         self.swtch_sgnl_pub = rospy.Publisher('switched_action_server/switching_signal', Int32, queue_size=1) # to publish the switching signal
+        rospy.Service('reset', Empty, self.set_behaviors_callback)
+    
+    def set_behaviors_callback(self, behaviors, switching_function):
+        self.nodes = behaviors
+        self.node = self.nodes[0]
+        self.switching_function = switching_function
+        return
 
     def run_fabrics(self) -> None:
         """this overwrites the parent's run_fabrics to accomendate multi-fabrics use"""
@@ -36,6 +43,9 @@ class SwitchedFabricsDinovaActionServer(FabricsActionServer):
         switching_signal, self.node= self.switching_function(self.nodes, {})  
         # publish switching signal
         self.swtch_sgnl_pub.publish(int(switching_signal))
+
+        # overwrite parameters - temporary workaround
+        rospy.set_param('joint_space_goal_weight', self.node.goal_weight)
 
         # execute the selected fabric's policy
         self.node.act()
