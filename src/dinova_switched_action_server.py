@@ -5,7 +5,6 @@ import dinova_fabrics_msgs.msg
 
 from dinova_fabrics_wrapper.common_action_server import FabricsActionServer
 import rospy
-from dinova_fabrics_wrapper.dinova_pose import DinovaFabricsPose
 from dinova_fabrics_msgs.msg import FabricsPoseGoal
 
 from behaviors import Behavior
@@ -16,7 +15,7 @@ class SwitchedFabricsDinovaActionServer(FabricsActionServer):
         self.goal_threshold = rospy.get_param('pose_threshold')
         self._feedback = dinova_fabrics_msgs.msg.FabricsPoseFeedback()
         self._result = dinova_fabrics_msgs.msg.FabricsPoseResult()
-        self.nodes = [Behavior("precise", True), Behavior("aggressive", True)]  # list of fabric controllers
+        self.nodes = [Behavior("precise", False), Behavior("aggressive", False)]  # list of fabric controllers
         self._action_name = rospy.get_name()
         self._as = actionlib.SimpleActionServer(
             self._action_name,
@@ -36,7 +35,6 @@ class SwitchedFabricsDinovaActionServer(FabricsActionServer):
         # select the node (fabric) based on the current value of the switching function
         self.node = self.switching_function(self.nodes, {'switch_counter': self.switch_counter})  
         self.switch_counter += 1
-
         # execute the selected fabric's policy
         self.node.act()
         self.node.request_vel()

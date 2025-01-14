@@ -9,6 +9,7 @@ from std_msgs.msg import Int32
 
 from behaviors import Behavior
 import switching_functions as sfs
+from switched_control.srv import SetSwitchingConfig, SetSwitchingConfigResponse
 
 class SwitchedFabricsDinovaActionServer(FabricsActionServer):
     def init_specifics(self) -> None:
@@ -29,9 +30,12 @@ class SwitchedFabricsDinovaActionServer(FabricsActionServer):
         self.switching_function = sfs.time_switching_function #sfs.time_switching_function
         self.node = self.nodes[0]  # will be defined dynamically in run_fabrics
         self.swtch_sgnl_pub = rospy.Publisher('switched_action_server/switching_signal', Int32, queue_size=1) # to publish the switching signal
-        rospy.Service('reset', Empty, self.set_behaviors_callback)
+        rospy.Service('set_switching_config', SetSwitchingConfig, self.set_behaviors_callback)
     
-    def set_behaviors_callback(self, behaviors, switching_function):
+    def set_behaviors_callback(self, request):
+        # TODO: finish this by associating the strings of the request to the actual objects of behaviors and switching function
+        behaviors = request.behaviors
+        switching_function = request.switching_function
         self.nodes = behaviors
         self.node = self.nodes[0]
         self.switching_function = switching_function
