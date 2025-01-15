@@ -7,7 +7,7 @@ class Behavior(DinovaFabricsJointSpace):
     def __init__(self, behavior_type: str, obstacles: bool):
         super().__init__()
         if behavior_type == "aggressive":
-            self.goal_weight = 100.
+            self.goal_weight = 3.
         elif behavior_type == "precise":
             self.goal_weight = 1.
         else:

@@ -1,0 +1,8 @@
+# Request
+string[] behaviors        # A list of behavior strings
+string switching_function # The switching function string
+
+---
+# Response
+bool success              # Whether the configuration was successfully set
+string message            # Optional response message (e.g., for errors)

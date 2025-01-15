@@ -30,16 +30,28 @@ class SwitchedFabricsDinovaActionServer(FabricsActionServer):
         self.switching_function = sfs.time_switching_function #sfs.time_switching_function
         self.node = self.nodes[0]  # will be defined dynamically in run_fabrics
         self.swtch_sgnl_pub = rospy.Publisher('switched_action_server/switching_signal', Int32, queue_size=1) # to publish the switching signal
-        rospy.Service('set_switching_config', SetSwitchingConfig, self.set_behaviors_callback)
+        self.available_behaviors = {"precise": Behavior("precise", True),
+                                    "aggressive": Behavior("aggressive", True)}
+        self.available_switching_funs = {"no_switching": sfs.no_switching_function,
+                                         "time_switching": sfs.time_switching_function}
+        rospy.Service('/switched_action_server/set_switching_config', SetSwitchingConfig, self.set_behaviors_callback)
     
     def set_behaviors_callback(self, request):
         # TODO: finish this by associating the strings of the request to the actual objects of behaviors and switching function
-        behaviors = request.behaviors
-        switching_function = request.switching_function
-        self.nodes = behaviors
-        self.node = self.nodes[0]
-        self.switching_function = switching_function
-        return
+        behavior_names = request.behaviors
+        switching_function_name = request.switching_function
+        self.nodes = []
+        try:
+            for behavior_name in behavior_names:
+                self.nodes.append(self.available_behaviors[behavior_name])
+            self.node = self.nodes[0]
+            if switching_function_name in self.available_switching_funs.keys():
+                self.switching_function = self.available_switching_funs[switching_function_name]
+            return SetSwitchingConfigResponse(success=True, message=f"Switched to the behaviors {behavior_names} under the {switching_function_name} function.")
+        
+        except Exception as e:
+            rospy.logerr(f"Failed to apply configuration: {e}")
+            return SetSwitchingConfigResponse(success=False, message=str(e))
 
     def run_fabrics(self) -> None:
         """this overwrites the parent's run_fabrics to accomendate multi-fabrics use"""

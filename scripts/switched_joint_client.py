@@ -11,6 +11,7 @@ import yaml
 import dinova_fabrics_msgs.msg
 from std_msgs.msg import Float64MultiArray
 from std_msgs.msg import Float32
+from switched_control.srv import SetSwitchingConfig
 
 make_rosbag = True
 
@@ -18,6 +19,18 @@ def default_goal(goal):
     goal.goal_joints.data = rospy.get_param('joint_goal', [2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     goal.goal_threshold = rospy.get_param('goal_threshold', 0.01)
     return goal
+
+def set_switching_config(behaviors, switching_function):
+    rospy.wait_for_service('/switched_action_server/set_switching_config')
+    try:
+        set_config = rospy.ServiceProxy('/switched_action_server/set_switching_config', SetSwitchingConfig)
+        response = set_config(behaviors, switching_function)
+        if response.success:
+            rospy.loginfo(f"Configuration applied: {response.message}")
+        else:
+            rospy.logerr(f"Failed to apply configuration: {response.message}")
+    except rospy.ServiceException as e:
+        rospy.logerr(f"Service call failed: {e}")
 
 def fabrics_client(schedule):
     if len(sys.argv)>1:
@@ -97,7 +110,6 @@ def fabrics_client(schedule):
         else:
             raise ValueError(f"unknown environment specified in .yaml file at {yaml_file}")
         
-        rosbag_file_name = "experiment_data.bag"
         configuration_initial = settings["start_position"]
         configuration_goal = settings["goal_position"]
 
@@ -109,10 +121,13 @@ def fabrics_client(schedule):
                 try:
                     if make_rosbag:
                         # Start recording a rosbag
-                        print("Starting rosbag recording.")
+                        print("\tStarting rosbag recording.")
                         rosbag_process = subprocess.Popen(["rosbag", "record", "-O", rosbag_file_name] + topics_to_record,
                                                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
+                    # configure switching behaviors
+                    set_switching_config(subexperiment["behaviors"], subexperiment["switching_function"])
+                    
                     # go to goal
                     rospy.set_param('joint_goal', configuration_goal)
                     goal_msg = dinova_fabrics_msgs.msg.FabricsJointGoal(goal_joints=Float64MultiArray(), goal_threshold=Float32())
