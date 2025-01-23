@@ -8,8 +8,9 @@ def no_switching_function(behaviors, params):
 def time_switching_function(behaviors, params):
     current_time = rospy.Time.now().to_sec()
     selected_index = 0
-    switching_frequency = 5  # Hz
-    if current_time % 1. <= 0.5:
+    switching_frequency = 0.5  # Hz
+    period = 1 / switching_frequency
+    if current_time % period < period / 2:
         selected_index = 0
     else:
         selected_index = 1
