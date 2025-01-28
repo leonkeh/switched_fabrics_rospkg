@@ -8,7 +8,7 @@ def make_obstacle():
     package_path = rospkg.RosPack().get_path("switched_control")
     urdf_file_path = package_path + "/src/sphere_obstacle.urdf"
     model_name = "obstacle_" + str(rospy.Time.now().nsecs)
-    x, y, z = 1.0, 1.0, 0.  # Position of the obstacle in Gazebo
+    x, y, z = 2.0, 0.0, 0.  # Position of the obstacle in Gazebo
 
     # Command to spawn the model using rosrun and passing arguments
     command = [

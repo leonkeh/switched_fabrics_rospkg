@@ -31,13 +31,14 @@ class SwitchedFabricsDinovaActionServer(FabricsActionServer):
         self.node = self.nodes[0]  # will be defined dynamically in run_fabrics
         self.swtch_sgnl_pub = rospy.Publisher('switched_action_server/switching_signal', Int32, queue_size=1) # to publish the switching signal
         self.available_behaviors = {"precise": Behavior("precise", True),
-                                    "aggressive": Behavior("aggressive", True)}
+                                    "aggressive": Behavior("aggressive", True),
+                                    "precise_O0": Behavior("precise", False),
+                                    "precise_O1": Behavior("precise", True)}
         self.available_switching_funs = {"no_switching": sfs.no_switching_function,
                                          "time_switching": sfs.time_switching_function}
         rospy.Service('/switched_action_server/set_switching_config', SetSwitchingConfig, self.set_behaviors_callback)
     
     def set_behaviors_callback(self, request):
-        # TODO: finish this by associating the strings of the request to the actual objects of behaviors and switching function
         behavior_names = request.behaviors
         switching_function_name = request.switching_function
         self.nodes = []

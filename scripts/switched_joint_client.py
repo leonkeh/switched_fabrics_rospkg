@@ -12,6 +12,7 @@ import dinova_fabrics_msgs.msg
 from std_msgs.msg import Float64MultiArray
 from std_msgs.msg import Float32
 from switched_control.srv import SetSwitchingConfig
+import numpy as np
 
 make_rosbag = True
 
@@ -65,8 +66,13 @@ def fabrics_client(schedule):
 
     elif schedule == "experiment":
         # run an experiment and record the data in a rosbag
-        goals = [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [2.0, 2.0, 0.0, 0.0, -1.5, 0.15, 0.0, 1.0, 0.0]]
-        topics_to_record = ["/dinova/omni_states", "/dinova/switched_action_server/switching_signal"] # for sim /dinova/omni_states for real "/dingo1/dinova/omni_states_vicon"
+        goals = [[3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [2.0, 2.0, 0.0, 0.0, -1.5, 0.15, 0.0, 1.0, 0.0]]
+        topics_to_record = ["/dinova/omni_states",
+                            "/dinova/switched_action_server/switching_signal",
+                            "/dingo1/dinova/omni_states_vicon",
+                            "/dingo1/switched_action_server/switching_signal",
+                            "/dingo2/dinova/omni_states_vicon",
+                            "/dingo2/switched_action_server/switching_signal"] # for sim /dinova/omni_states for real "/dingo1/dinova/omni_states_vicon"
         rosbag_file_name = "experiment_data.bag"
 
         try:
@@ -102,13 +108,12 @@ def fabrics_client(schedule):
         with open(yaml_file, 'r') as file:
             data = yaml.safe_load(file)
         settings = data["settings"]
-        environment = settings["environment"]
-        if environment == "sim":
-            topics_to_record = ["/dinova/omni_states", "/dinova/switched_action_server/switching_signal"] # for sim /dinova/omni_states for real "/dingo1/dinova/omni_states_vicon"
-        elif environment == "lab":
-            topics_to_record = ["/dingo1/dinova/omni_states_vicon", "/dinova/switched_action_server/switching_signal"]
-        else:
-            raise ValueError(f"unknown environment specified in .yaml file at {yaml_file}")
+        topics_to_record = ["/dinova/omni_states",
+                            "/dinova/switched_action_server/switching_signal",
+                            "/dingo1/dinova/omni_states_vicon",
+                            "/dingo1/switched_action_server/switching_signal",
+                            "/dingo2/dinova/omni_states_vicon",
+                            "/dingo2/switched_action_server/switching_signal"]
         
         configuration_initial = settings["start_position"]
         configuration_goal = settings["goal_position"]
@@ -117,7 +122,15 @@ def fabrics_client(schedule):
             print(f"\nNow running: {experiment['name']}")
             for i, subexperiment in enumerate(experiment.get("subexperiments", [])):
                 print(f"\tRunning subexperiment {i + 1}/{len(experiment.get('subexperiments', []))}")
-                rosbag_file_name = settings["saving_directory"] + experiment["name"] +  subexperiment["name"] + ".bag"
+                behavior_name_dict = {"precise_behavior": "p",
+                                      "aggressive_behavior": "a",
+                                      "precise_aggressive_behaviors": "pa",
+                                      "precise_O0": "precise_O0",
+                                      "precise_O1": "precise_O1",
+                                      "precise_O0O1": "precise_O0O1"}
+                environment_dict = {"sim": "S", "lab": "L"}
+                rosbag_file_name = settings["saving_directory"] + environment_dict[settings["environment"]] + "_" + experiment["name"] +  \
+                    "_SubE" + behavior_name_dict[subexperiment["name"]] + "_O" + str(settings["obstacle"]) + "_I1G1" + "_R1" + ".bag"
                 try:
                     if make_rosbag:
                         # Start recording a rosbag
@@ -154,6 +167,34 @@ def fabrics_client(schedule):
                 client.send_goal(default_goal(goal=goal_msg))
                 max_time = 30.
                 status = client.wait_for_result(timeout=rospy.Duration(max_time))
+    
+    # elif schedule == "draw_vfields":
+    #     # drawing the vector field of the policy of the base velocities as a function of the base configuration
+    #     start = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    #     goal = [2.0, 2.0, 0.0, 0.0, -1.5, 0.15, 0.0, 1.0, 0.0]
+        
+    #     res = 10 # (.) samples per meter, (.)^2 samples per m^2
+    #     nx = np.linspace(goal[0]-start[0], int((goal[0]-start[0]) * res))
+    #     ny = np.linspace(goal[1]-start[1], int((goal[1]-start[1]) * res))
+    #     xx, yy = np.meshgrid(nx, ny)
+        
+    #     for behavior in behaviors:
+    #         control_inputs = np.empty() # in this case, demanded reference velocities
+
+    #         for xi in xx:
+    #             for yi in yy:
+    #                 behavior._q = [xi, yi, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    #                 behavior._qdot = [1., 1., 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    #                 behavior.set_runtime_arguments()
+    #                 action = behavior._planner.compute_action(**behavior._arguments)
+    #                 behavior._action = behavior._alpha_action * behavior._action + (1-behavior._alpha_action) * action
+    #                 behavior.action_dingo = behavior.rotate_base_action(theta=behavior._q[2], action_vicon=behavior._action)
+
+    #                 if np.linalg.norm(behavior.action_dingo[0:2]) > behavior._dingo_vel_limit:
+    #                     behavior.action_dingo[0:2] = behavior.action_dingo[0:2] / np.linalg.norm(behavior.action_dingo[0:2]) * behavior._dingo_vel_limit
+                    
+
+
             
 
 
