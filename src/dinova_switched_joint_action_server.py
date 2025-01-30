@@ -16,7 +16,12 @@ class SwitchedFabricsDinovaActionServer(FabricsActionServer):
         self.goal_threshold = rospy.get_param('joint_space_threshold')
         self._feedback = dinova_fabrics_msgs.msg.FabricsJointFeedback()
         self._result = dinova_fabrics_msgs.msg.FabricsJointResult()
-        self.nodes = [Behavior("precise", True), Behavior("aggressive", True)]  # list of fabric controllers
+        self.nodes = []  # list of fabric controllers
+        self.available_behaviors = {"precise": Behavior("precise", True),
+                                    "aggressive": Behavior("aggressive", True),
+                                    "precise_O0": Behavior("precise", False),
+                                    "precise_O1": Behavior("precise", True)}
+        self.node = self.available_behaviors["precise"]  # will be defined dynamically in run_fabrics
         self._action_name = rospy.get_name()
         self._as = actionlib.SimpleActionServer(
             self._action_name,
@@ -28,14 +33,10 @@ class SwitchedFabricsDinovaActionServer(FabricsActionServer):
 
         # switching stuff
         self.switching_function = sfs.time_switching_function #sfs.time_switching_function
-        self.node = self.nodes[0]  # will be defined dynamically in run_fabrics
         self.swtch_sgnl_pub = rospy.Publisher('switched_action_server/switching_signal', Int32, queue_size=1) # to publish the switching signal
-        self.available_behaviors = {"precise": Behavior("precise", True),
-                                    "aggressive": Behavior("aggressive", True),
-                                    "precise_O0": Behavior("precise", False),
-                                    "precise_O1": Behavior("precise", True)}
         self.available_switching_funs = {"no_switching": sfs.no_switching_function,
-                                         "time_switching": sfs.time_switching_function}
+                                         "time_switching": sfs.time_switching_function,
+                                         "state_switching": sfs.pos_switching_function}
         rospy.Service('/switched_action_server/set_switching_config', SetSwitchingConfig, self.set_behaviors_callback)
     
     def set_behaviors_callback(self, request):
@@ -57,7 +58,10 @@ class SwitchedFabricsDinovaActionServer(FabricsActionServer):
     def run_fabrics(self) -> None:
         """this overwrites the parent's run_fabrics to accomendate multi-fabrics use"""
         # select the node (fabric) based on the current value of the switching function
-        switching_signal, self.node= self.switching_function(self.nodes, {})  
+        dict_params = {'x': self.node._q[:2],
+                       'switch_border': [0.7, -0.5, 0.]}
+        print(self.node._q[:2])
+        switching_signal, self.node= self.switching_function(self.nodes, dict_params)
         # publish switching signal
         self.swtch_sgnl_pub.publish(int(switching_signal))
 

@@ -33,7 +33,11 @@ class SwitchedFabricsDinovaActionServer(FabricsActionServer):
     def run_fabrics(self) -> None:
         """this overwrites the parent's run_fabrics to accomendate multi-fabrics use"""
         # select the node (fabric) based on the current value of the switching function
-        self.node = self.switching_function(self.nodes, {'switch_counter': self.switch_counter})  
+        print(self.node._q[:2])
+        dict_params = {'switch_counter': self.switch_counter,
+                       'x': self.node._q[:2],
+                       'switch_border': [0.7, -0.5, 0.]}
+        self.node = self.switching_function(self.nodes, dict_params)  
         self.switch_counter += 1
         # execute the selected fabric's policy
         self.node.act()
