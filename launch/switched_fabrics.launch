@@ -28,7 +28,7 @@
 		</node>
 
 		<!-- launch the perception pipeline that publishes to the objects topic -->
-		<node pkg="switched_control" type="obstacle_perception_node.py" name="obstacle_perception" output="screen"></node>
+		<!-- <node pkg="switched_control" type="obstacle_perception_node.py" name="obstacle_perception" output="screen"></node> -->
 	</group>
 
 	<group ns="$(env ROBOT_NAME)" unless="$(arg sim)">

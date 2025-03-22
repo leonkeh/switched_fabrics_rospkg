@@ -46,7 +46,7 @@ def obstacle_publisher():
     obstacle_array_msg = create_spoofed_obstacles_array(obstacles_msgs)
     rospy.loginfo(f"Publishing {n_obstacles} at {sys.argv[1:]}")
 
-    pub = rospy.Publisher('/dingo1/objects', ObjectArray, queue_size=1)
+    pub = rospy.Publisher('/dinova/objects', ObjectArray, queue_size=1)
 
     rate = rospy.Rate(1)  # 1 Hz publishing rate
 

@@ -113,61 +113,69 @@ def fabrics_client(schedule):
                             "/dingo1/dinova/omni_states_vicon",
                             "/dingo1/switched_action_server/switching_signal",
                             "/dingo2/dinova/omni_states_vicon",
-                            "/dingo2/switched_action_server/switching_signal"]
+                            "/dingo2/switched_action_server/switching_signal",
+                            "/dingo1/dingo_velocity_controller/cmd_vel",
+                            "/dingo2/dingo_velocity_controller/cmd_vel"]
         
         configuration_initial = settings["start_position"]
         configuration_goal = settings["goal_position"]
+        
+        # spoof an obstacle at each specified obstacle location and size
+        obstacle_data = [j for obst in settings["obstacles"] for j in [str(obst[0]), str(obst[1]), str(obst[2])]]
+        spoofed_obst_node = subprocess.Popen(["rosrun", "switched_control", "spoof_obstacle.py", *obstacle_data])
 
         for experiment in data["experiments"]:
             print(f"\nNow running: {experiment['name']}")
-            for i, subexperiment in enumerate(experiment.get("subexperiments", [])):
-                print(f"\tRunning subexperiment {i + 1}/{len(experiment.get('subexperiments', []))}")
-                behavior_name_dict = {"precise_behavior": "p",
-                                      "aggressive_behavior": "a",
-                                      "precise_aggressive_behaviors": "pa",
-                                      "precise_O0": "precise_O0",
-                                      "precise_O1": "precise_O1",
-                                      "precise_O0O1": "precise_O0O1"}
-                environment_dict = {"sim": "S", "lab": "L"}
-                rosbag_file_name = settings["saving_directory"] + environment_dict[settings["environment"]] + "_" + experiment["name"] +  \
-                    "_SubE" + behavior_name_dict[subexperiment["name"]] + "_O" + str(settings["obstacle"]) + "_I1G1" + "_R1" + ".bag"
-                try:
-                    if make_rosbag:
-                        # Start recording a rosbag
-                        print("\tStarting rosbag recording.")
-                        rosbag_process = subprocess.Popen(["rosbag", "record", "-O", rosbag_file_name] + topics_to_record,
-                                                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            for run_index in range(settings["number_of_runs"]):
+                print(f"Run number {run_index + 1}")
+                for i, subexperiment in enumerate(experiment.get("subexperiments", [])):
+                    print(f"\tRunning subexperiment {i + 1}/{len(experiment.get('subexperiments', []))}")
+                    behavior_name_dict = {"precise_behavior": "p",
+                                        "aggressive_behavior": "a",
+                                        "precise_aggressive_behaviors": "pa",
+                                        "precise_O0": "precise_O0",
+                                        "precise_O1": "precise_O1",
+                                        "precise_O0O1": "precise_O0O1"}
+                    environment_dict = {"sim": "S", "lab": "L"}
+                    rosbag_file_name = settings["saving_directory"] + environment_dict[settings["environment"]] + "_" + experiment["name"] +  \
+                        "_SubE" + behavior_name_dict[subexperiment["name"]] + "_R" + str(run_index + 1) + ".bag"
+                    try:
+                        if make_rosbag:
+                            # Start recording a rosbag
+                            print("\tStarting rosbag recording.")
+                            rosbag_process = subprocess.Popen(["rosbag", "record", "-O", rosbag_file_name] + topics_to_record,
+                                                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-                    # configure switching behaviors
-                    set_switching_config(subexperiment["behaviors"], subexperiment["switching_function"])
+                        # configure switching behaviors
+                        set_switching_config(subexperiment["behaviors"], subexperiment["switching_function"])
+                        
+                        # go to goal
+                        rospy.set_param('joint_goal', configuration_goal)
+                        goal_msg = dinova_fabrics_msgs.msg.FabricsJointGoal(goal_joints=Float64MultiArray(), goal_threshold=Float32())
+                        client.send_goal(default_goal(goal=goal_msg))
+                        max_time = 30.
+                        status = client.wait_for_result(timeout=rospy.Duration(max_time))
+                        if status == False:
+                            client.cancel_goal()
+                            print("ended after timeout")
+                        else:
+                            print("status:", status)
+                    except KeyboardInterrupt:
+                        print("Subexperiment interrupted.")
                     
-                    # go to goal
-                    rospy.set_param('joint_goal', configuration_goal)
+                    # go back to the initial configuration
+                    rospy.set_param('joint_goal', configuration_initial)
                     goal_msg = dinova_fabrics_msgs.msg.FabricsJointGoal(goal_joints=Float64MultiArray(), goal_threshold=Float32())
                     client.send_goal(default_goal(goal=goal_msg))
                     max_time = 30.
                     status = client.wait_for_result(timeout=rospy.Duration(max_time))
-                    if status == False:
-                        client.cancel_goal()
-                        print("ended after timeout")
-                    else:
-                        print("status:", status)
-                except KeyboardInterrupt:
-                    print("Subexperiment interrupted.")
-                finally:
                     if make_rosbag:
                         # Stop recording the rosbag
                         rosbag_process.terminate()
                         rosbag_process.wait()
                         print("Rosbag recording stopped.")
-                
-                # go back to the initial configuration
-                rospy.set_param('joint_goal', configuration_initial)
-                goal_msg = dinova_fabrics_msgs.msg.FabricsJointGoal(goal_joints=Float64MultiArray(), goal_threshold=Float32())
-                client.send_goal(default_goal(goal=goal_msg))
-                max_time = 30.
-                status = client.wait_for_result(timeout=rospy.Duration(max_time))
-    
+
+        spoofed_obst_node.terminate()
     # elif schedule == "draw_vfields":
     #     # drawing the vector field of the policy of the base velocities as a function of the base configuration
     #     start = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
